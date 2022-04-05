@@ -5,17 +5,6 @@ import "./externalService";
 
 const app = express();
 const port = 3000;
-interface Media {
-  id: string;
-  mimeType: string;
-  context: string;
-}
-interface MediaContext {
-  id: string;
-  mediaId: string;
-  context: string;
-  probability: number;
-}
 // media :>>  [
 //   {
 //     id: '7f2dcbd8-5b5f-4f1a-bfa4-016ddf4dd662',
@@ -111,6 +100,7 @@ interface MediaContext {
 //       {
 //         id
 //         mediaId
+//         mimeType
 //         probability
 //       }
 //     ],
@@ -118,11 +108,37 @@ interface MediaContext {
 //       {
 //         id
 //         mediaId
+//         mimeType
 //         probability
 //       }
 //     ]
 //   }
 // }
+
+interface Media {
+  id: string;
+  mimeType: string;
+  context: string;
+}
+interface MediaContext {
+  id: string;
+  mediaId: string;
+  context: string;
+  probability: number;
+}
+interface MediaData {
+  // [key: string]: string | number;
+  contextId: string;
+  // context?: string;
+  mimeType: string;
+  probability: number;
+}
+interface MediaComplete {
+  context: {
+    back: MediaData[];
+    front: MediaData[];
+  };
+}
 
 app.get("/api/sessions/:sessionId", async (req, res) => {
   // console.log("req :>> ", req);
@@ -131,23 +147,59 @@ app.get("/api/sessions/:sessionId", async (req, res) => {
   try {
     // call the other end points to collect and filter the required data
     // call media and get {id, memeType, context}
-    const media: { data: Media[] } = await axios.get<Media[]>(
+    // TODO: make these call concurently
+    const mediaPromise = axios.get<Media[]>(
       `https://api.company .internal/sessions/${sessionId}/media`
     );
-    console.log("media :>> ", media.data);
-    // const mediaData:
-    const mediaContext = await axios.get<MediaContext[]>(
+    const mediaContextPromise = axios.get<MediaContext[]>(
       `https://api.company .internal/media-context/${sessionId}`
     );
+    const [media, mediaContext]: [{ data: Media[] }, { data: MediaContext[] }] =
+      await Promise.all([mediaPromise, mediaContextPromise]);
+    console.log("media :>> ", media.data);
     console.log("mediaContext :>> ", mediaContext.data);
     // combine media and mediaContext to group by front and back, and sorting by
-    // probbility
-    const r = media.data.reduce((acc, curr, arr) => {
-      console.log("acc :>> ", acc);
+    // probility
+    const r = media.data.reduce(
+      (acc: MediaComplete, cur: Media) => {
+        const sortHighToLow = (a, b) => {
+          return b.probability - a.probability;
+        };
+        console.log("acc before  :>> ", acc);
+        console.log("cur :>> ", cur);
+        // TODO: assign probability
+        const curContext = mediaContext.data.find((m) => {
+          return m.mediaId === cur.id;
+        });
+        const probability = curContext!.probability;
+        const contextId = curContext!.id;
+        const context = curContext!.context;
+        if (["back", "front"].includes(context)) {
+          if (cur.context === "document-front") {
+            acc.context.front.push({
+              ...cur,
+              contextId,
+              probability,
+            });
+          }
+          if (cur.context === "document-back") {
+            acc.context.back.push({
+              ...cur,
+              contextId,
+              probability,
+            });
+          }
+        }
+        acc.context.front.sort(sortHighToLow);
+        acc.context.back.sort(sortHighToLow);
 
-      return acc;
-    }, []);
-    return res.status(200).json({ hello: "its me" });
+        console.log("acc after:>> ", acc);
+
+        return acc;
+      },
+      { context: { back: [], front: [] } }
+    );
+    return res.status(200).json(r);
   } catch (error: any) {
     console.error("Error happened", error);
     return res

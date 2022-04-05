@@ -1,6 +1,4 @@
 import express from "express";
-import cors from "cors";
-import axios from "axios";
 import "./externalService";
 import { sessions } from "./routes/media.routes";
 

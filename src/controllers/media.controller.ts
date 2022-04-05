@@ -1,27 +1,19 @@
-import { Media, MediaContext, MediaComplete } from "../types";
+import { MediaContext, MediaComplete } from "../types";
 import { getMedia } from "../services/media.services";
 
 export const handleMedia = async (req, res) => {
-  // console.log("req :>> ", req);
   const { sessionId } = req.params;
-  console.log("sessionId :>> ", sessionId);
   try {
     // call the other end points to collect and filter the required data
     const { mediaData, mediaContextData } = await getMedia(sessionId);
 
-    console.log("mediaData :>> ", mediaData);
-    console.log("mediaContextData :>> ", mediaContextData);
     // combine media and mediaContext to group by front and back, and sorting by
     // probility
-    // TODO: put reduce function in a controller
     const r = mediaContextData.reduce(
       (acc: MediaComplete, cur: MediaContext) => {
         const sortHighToLow = (a, b) => {
           return b.probability - a.probability;
         };
-        console.log("acc before  :>> ", acc);
-        console.log("cur :>> ", cur);
-        // TODO: assign probability
         const mediaCurrent = mediaData.find((m) => {
           return m.id === cur.mediaId;
         });
@@ -49,8 +41,6 @@ export const handleMedia = async (req, res) => {
         }
         acc.context.front.sort(sortHighToLow);
         acc.context.back.sort(sortHighToLow);
-
-        console.log("acc after:>> ", acc);
 
         return acc;
       },

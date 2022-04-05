@@ -1,29 +1,5 @@
-import axios from "axios";
-
-interface Media {
-  id: string;
-  mimeType: string;
-  context: string;
-}
-interface MediaContext {
-  id: string;
-  mediaId: string;
-  context: string;
-  probability: number;
-}
-interface MediaData {
-  id: string;
-  contextId: string;
-  context: string;
-  mimeType: string;
-  probability: number;
-}
-interface MediaComplete {
-  context: {
-    back: MediaData[];
-    front: MediaData[];
-  };
-}
+import { Media, MediaContext, MediaComplete } from "../types";
+import { getMedia } from "../services/media.services";
 
 export const handleMedia = async (req, res) => {
   // console.log("req :>> ", req);
@@ -31,24 +7,14 @@ export const handleMedia = async (req, res) => {
   console.log("sessionId :>> ", sessionId);
   try {
     // call the other end points to collect and filter the required data
-    // call media and get {id, memeType, context}
-    // TODO: make these call concurently
-    // TODO: implement retry
-    // TODO: put data calling in service
-    const mediaPromise = axios.get<Media[]>(
-      `https://api.company .internal/sessions/${sessionId}/media`
-    );
-    const mediaContextPromise = axios.get<MediaContext[]>(
-      `https://api.company .internal/media-context/${sessionId}`
-    );
-    const [media, mediaContext]: [{ data: Media[] }, { data: MediaContext[] }] =
-      await Promise.all([mediaPromise, mediaContextPromise]);
-    console.log("media :>> ", media.data);
-    console.log("mediaContext :>> ", mediaContext.data);
+    const { mediaData, mediaContextData } = await getMedia(sessionId);
+
+    console.log("mediaData :>> ", mediaData);
+    console.log("mediaContextData :>> ", mediaContextData);
     // combine media and mediaContext to group by front and back, and sorting by
     // probility
     // TODO: put reduce function in a controller
-    const r = mediaContext.data.reduce(
+    const r = mediaContextData.reduce(
       (acc: MediaComplete, cur: MediaContext) => {
         const sortHighToLow = (a, b) => {
           return b.probability - a.probability;
@@ -56,7 +22,7 @@ export const handleMedia = async (req, res) => {
         console.log("acc before  :>> ", acc);
         console.log("cur :>> ", cur);
         // TODO: assign probability
-        const mediaCurrent = media.data.find((m) => {
+        const mediaCurrent = mediaData.find((m) => {
           return m.id === cur.mediaId;
         });
         // exclude the media where context is not front or back

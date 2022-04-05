@@ -128,8 +128,9 @@ interface MediaContext {
 }
 interface MediaData {
   // [key: string]: string | number;
+  id: string;
   contextId: string;
-  // context?: string;
+  context: string;
   mimeType: string;
   probability: number;
 }
@@ -160,33 +161,36 @@ app.get("/api/sessions/:sessionId", async (req, res) => {
     console.log("mediaContext :>> ", mediaContext.data);
     // combine media and mediaContext to group by front and back, and sorting by
     // probility
-    const r = media.data.reduce(
-      (acc: MediaComplete, cur: Media) => {
+    const r = mediaContext.data.reduce(
+      (acc: MediaComplete, cur: MediaContext) => {
         const sortHighToLow = (a, b) => {
           return b.probability - a.probability;
         };
         console.log("acc before  :>> ", acc);
         console.log("cur :>> ", cur);
         // TODO: assign probability
-        const curContext = mediaContext.data.find((m) => {
-          return m.mediaId === cur.id;
+        const mediaCurrent = media.data.find((m) => {
+          return m.id === cur.mediaId;
         });
-        const probability = curContext!.probability;
-        const contextId = curContext!.id;
-        const context = curContext!.context;
-        if (["back", "front"].includes(context)) {
-          if (cur.context === "document-front") {
+        // exclude the media where context is not front or back
+        if (["back", "front"].includes(cur.context)) {
+          // correct the contexts and include all data together
+          if (cur.context === "front") {
             acc.context.front.push({
-              ...cur,
-              contextId,
-              probability,
+              id: cur!.mediaId,
+              contextId: cur.id,
+              mimeType: mediaCurrent!.mimeType,
+              context: "document-front",
+              probability: cur.probability,
             });
           }
-          if (cur.context === "document-back") {
+          if (cur.context === "back") {
             acc.context.back.push({
-              ...cur,
-              contextId,
-              probability,
+              id: cur!.mediaId,
+              contextId: cur.id,
+              mimeType: mediaCurrent!.mimeType,
+              context: "document-back",
+              probability: cur.probability,
             });
           }
         }
@@ -199,6 +203,46 @@ app.get("/api/sessions/:sessionId", async (req, res) => {
       },
       { context: { back: [], front: [] } }
     );
+
+    // const r = media.data.reduce(
+    //   (acc: MediaComplete, cur: Media) => {
+    //     const sortHighToLow = (a, b) => {
+    //       return b.probability - a.probability;
+    //     };
+    //     console.log("acc before  :>> ", acc);
+    //     console.log("cur :>> ", cur);
+    //     // TODO: assign probability
+    //     const curContext = mediaContext.data.find((m) => {
+    //       return m.mediaId === cur.id;
+    //     });
+    //     const probability = curContext!.probability;
+    //     const contextId = curContext!.id;
+    //     const context = curContext!.context;
+    //     if (["back", "front"].includes(context)) {
+    //       if (cur.context === "document-front") {
+    //         acc.context.front.push({
+    //           ...cur,
+    //           contextId,
+    //           probability,
+    //         });
+    //       }
+    //       if (cur.context === "document-back") {
+    //         acc.context.back.push({
+    //           ...cur,
+    //           contextId,
+    //           probability,
+    //         });
+    //       }
+    //     }
+    //     acc.context.front.sort(sortHighToLow);
+    //     acc.context.back.sort(sortHighToLow);
+
+    //     console.log("acc after:>> ", acc);
+
+    //     return acc;
+    //   },
+    //   { context: { back: [], front: [] } }
+    // );
     return res.status(200).json(r);
   } catch (error: any) {
     console.error("Error happened", error);

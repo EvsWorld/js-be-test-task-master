@@ -35,12 +35,27 @@ const desired = {
     ],
   },
 };
+jest.setTimeout(8000);
 
+// TEST GOALS:
+
+// Query for the media that applies to that sessionId Filter out the
+// irrelevant media (where media-context was ‘none’). media of
+// id: 663ae1db-32b6-4a4e-a828-98e3e94ca11e should be excluded for this reason.
+
+// Correct discrepancies with regard to the context (using the context given by
+// the /media-context service as truth). media of id:
+// 40f1e462-6db8-4313-ace3-83e4f5619c56 should be corrected from ‘document-back’ to
+// ‘document-front’ for this reason.
+
+// And finally, combine all the data from all the apis and group them by context
+// and sort them by probability.
 describe("GET http://localhost:3000/api/sessions/:sessionId", () => {
   it("should return session with media", async () => {
     const response = await axios.get(
       "http://localhost:3000/api/sessions/90d61876-b99a-443e-994c-ba882c8558b6"
     );
+    // console.log("response = ", response);
     expect(response.status).toEqual(200);
     expect(response.data).toMatchObject(desired);
   });

@@ -21,34 +21,37 @@ export const handleMedia = async (req, res, next) => {
     // combine media and mediaContext to group by front and back, and sorting by
     // probility TODO: refactor to services folder? Make this function
     // imperitive. Named like: correctAndAddMedia(mediaData, mediaContext)
-    const r = mediaContextData.reduce(
-      (acc: MediaComplete, cur: MediaContext) => {
-        // TODO: move to utils folder
-        // TODO: refactor to function
-        const mediaCurrent = findCurrentMedia(mediaData, cur);
-        // exclude the media where context is not front or back
-        // TODO: refactor to function
-        if (isContextRelevant(cur.context)) {
-          // correct the contexts and include all data together
-          acc.context[cur.context].push({
-            // TODO: correct types
-            id: cur!.mediaId,
-            contextId: cur.id,
-            mimeType: mediaCurrent.mimeType,
-            context:
-              cur.context === "front" ? "document-front" : "document-back",
-            probability: cur.probability,
-          });
-        }
-        acc.context.front.sort(sortHighToLow);
-        acc.context.back.sort(sortHighToLow);
+    const correctAndAddMedia = (mediaData, mediaContext) => {
+      const r = mediaContext.reduce(
+        (acc: MediaComplete, cur: MediaContext) => {
+          // TODO: move to utils folder
+          const mediaCurrent = findCurrentMedia(mediaData, cur);
+          // exclude the media where context is not front or back
+          if (isContextRelevant(cur.context)) {
+            // correct the contexts and include all data together
+            acc.context[cur.context].push({
+              // TODO: correct types
+              id: cur!.mediaId,
+              contextId: cur.id,
+              mimeType: mediaCurrent.mimeType,
+              context:
+                cur.context === "front" ? "document-front" : "document-back",
+              probability: cur.probability,
+            });
+          }
+          acc.context.front.sort(sortHighToLow);
+          acc.context.back.sort(sortHighToLow);
 
-        return acc;
-      },
-      { context: { back: [], front: [] } }
-    );
-    console.log("r :>> ", JSON.stringify(r, null, 2));
-    return res.status(200).json(r);
+          return acc;
+        },
+        { context: { back: [], front: [] } }
+      );
+      console.log("r :>> ", JSON.stringify(r, null, 2));
+      return r;
+    };
+    return res
+      .status(200)
+      .json(correctAndAddMedia(mediaData, mediaContextData));
   } catch (error: any) {
     next(error);
   }

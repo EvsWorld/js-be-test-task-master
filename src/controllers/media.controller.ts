@@ -1,6 +1,17 @@
 import { MediaContext, MediaComplete } from "../types";
 import { getMedia } from "../services/media.services";
 
+const isContextRelevant = (context) => ["back", "front"].includes(context);
+
+const sortHighToLow = (a, b) => {
+  return b.probability - a.probability;
+};
+
+const findCurrentMedia = (mData, current) =>
+  mData.find((m) => {
+    return m.id === current.mediaId;
+  });
+
 export const handleMedia = async (req, res, next) => {
   const { sessionId } = req.params;
   try {
@@ -13,36 +24,21 @@ export const handleMedia = async (req, res, next) => {
     const r = mediaContextData.reduce(
       (acc: MediaComplete, cur: MediaContext) => {
         // TODO: move to utils folder
-        const sortHighToLow = (a, b) => {
-          return b.probability - a.probability;
-        };
         // TODO: refactor to function
-        const mediaCurrent = mediaData.find((m) => {
-          return m.id === cur.mediaId;
-        });
+        const mediaCurrent = findCurrentMedia(mediaData, cur);
         // exclude the media where context is not front or back
         // TODO: refactor to function
-        if (["back", "front"].includes(cur.context)) {
+        if (isContextRelevant(cur.context)) {
           // correct the contexts and include all data together
-          if (cur.context === "front") {
-            acc.context.front.push({
-              // TODO: correct types
-              id: cur!.mediaId,
-              contextId: cur.id,
-              mimeType: mediaCurrent!.mimeType,
-              context: "document-front",
-              probability: cur.probability,
-            });
-          }
-          if (cur.context === "back") {
-            acc.context.back.push({
-              id: cur!.mediaId,
-              contextId: cur.id,
-              mimeType: mediaCurrent!.mimeType,
-              context: "document-back",
-              probability: cur.probability,
-            });
-          }
+          acc.context[cur.context].push({
+            // TODO: correct types
+            id: cur!.mediaId,
+            contextId: cur.id,
+            mimeType: mediaCurrent.mimeType,
+            context:
+              cur.context === "front" ? "document-front" : "document-back",
+            probability: cur.probability,
+          });
         }
         acc.context.front.sort(sortHighToLow);
         acc.context.back.sort(sortHighToLow);
@@ -54,25 +50,6 @@ export const handleMedia = async (req, res, next) => {
     console.log("r :>> ", JSON.stringify(r, null, 2));
     return res.status(200).json(r);
   } catch (error: any) {
-    // if (error.response) {
-    //   // The request was made and the server responded with a status code
-    //   // that falls out of the range of 2xx
-    //   console.log("error.response.data: ", error.response.data);
-    //   console.log("error.response.status: ", error.response.status);
-    //   console.log("error.reqponse.headers: ", error.response.headers);
-    // } else if (error.request) {
-    //   // The request was made but no response was received
-    //   // `error.request` is an instance of XMLHttpRequest in the browser and an instance of
-    //   // http.ClientRequest in node.js
-    //   console.log("error.request: ", error.request);
-    // } else {
-    //   // Something happened in setting up the request that triggered an Error
-    //   console.log("error.message", error.message);
-    // }
-    // console.log("error.config: ", error.config);
     next(error);
-    //   return res
-    //     .status(error.response.status)
-    //     .json({ message: error.response.data });
   }
 };

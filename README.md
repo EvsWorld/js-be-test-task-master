@@ -53,14 +53,14 @@ automation to help us to identify the correct document side.
 
 We have three service endpoints to use.
 
-1. Session details endpoint `GET https://api.company .internal/sessions/:sessionId`
+1. Session details endpoint `GET https://api.veriff.internal/sessions/:sessionId`
     ```javascript
     {
       id: '90d61876-b99a-443e-994c-ba882c8558b6', // UUID v4
       status: 'internal_manual_review'            // Status
     }
     ```
-2. Session media endpoint `GET https://api.company .internal/sessions/:sessionId/media`
+2. Session media endpoint `GET https://api.veriff.internal/sessions/:sessionId/media`
     ```javascript
     [
         {
@@ -70,7 +70,7 @@ We have three service endpoints to use.
         }
    ]
     ```
-3. Media context endpoint `GET https://api.company .internal/media-context/:sessionId`
+3. Media context endpoint `GET https://api.veriff.internal/media-context/:sessionId`
     ```javascript
     [
          {

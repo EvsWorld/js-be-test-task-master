@@ -54,12 +54,12 @@ async function retryPromiseWithDelay(
 // TODO:
 export const getMedia = async (sessionId: string) => {
   const mediaPromiseCall = axios.get<Media[]>(
-    `https://api.company .internal/sessions/${sessionId}/media`
+    `https://api.veriff.internal/sessions/${sessionId}/media`
   );
   const mediaPromise = retryPromiseWithDelay(mediaPromiseCall, "media");
 
   const mediaContextPromiseCall = axios.get<MediaContext[]>(
-    `https://api.company .internal/media-context/${sessionId}`
+    `https://api.veriff.internal/media-context/${sessionId}`
   );
   const mediaContextPromise = retryPromiseWithDelay(
     mediaContextPromiseCall,

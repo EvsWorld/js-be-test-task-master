@@ -74,7 +74,7 @@ const findMatch = (haystack, needle = SESSION_UUID) => {
   return haystack.indexOf(needle) !== -1;
 };
 
-nock("https://api.veriff.internal")
+nock("https://api.company.internal")
   .persist()
   .get(
     /\/sessions\/[0-9A-F]{8}-[0-9A-F]{4}-[4][0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$/i
@@ -93,14 +93,14 @@ nock("https://api.veriff.internal")
     ];
   });
 
-nock("https://api.veriff.internal")
+nock("https://api.company.internal")
   .persist()
   .get(
     /\/sessions\/[0-9A-F]{8}-[0-9A-F]{4}-[4][0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}\/media/i
   )
   .reply((uri) => [200, getData(uri, mediaMockData)]);
 
-nock("https://api.veriff.internal")
+nock("https://api.company.internal")
   .persist()
   // TODO: get this to work to test the retry functionality
   // .get(
